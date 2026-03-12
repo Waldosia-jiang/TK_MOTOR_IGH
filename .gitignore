@@ -1,0 +1,102 @@
+# ROS2构建产物
+install/
+log/
+build/
+
+# 以太网/CAN相关构建文件
+*.so
+*.o
+*.a
+*.out
+
+# CMake构建文件
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+cmake-build-*/
+
+# Python缓存文件
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# 日志文件
+*.log
+logs/
+*.csv
+*.dat
+*.txt
+
+# 系统文件
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 编辑器文件
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.bak
+*.tmp
+
+# 环境变量
+.env
+.env.local
+.env.*.local
+
+# 压缩文件
+*.zip
+*.tar.gz
+*.tgz
+
+# 二进制文件
+*.exe
+*.dll
+*.dylib
+
+# ROS2特定文件
+.colcon_install_layout
+.local_setup.*
+setup.*
+_local_setup_util_*
+
+# COLCON构建系统
+COLCON_IGNORE
+colcon_build.rc
+
+# 包管理器
+node_modules/
+package-lock.json
+yarn.lock
+
+# 临时文件
+*.tmp
+temp/
+tmp/
+
+# 特定于此项目的忽略文件
+motor_current_log.csv
+motor_data_q_tau.csv
+
+# 图片文件（如果您不想跟踪图片）
+# *.png
+# *.jpg
+# *.jpeg
