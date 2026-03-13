@@ -793,14 +793,14 @@ void motion_process_slave_motion_cst(int slv_num)
     
     // 将计算结果映射到驱动器的目标转矩内部单位
     // motor_current 目前量级较小，这里放大一个系数以避免被截断为0
-    double torque_cmd = motor_current * 1000.0;  // 缩放系数，可根据现场需要调整
+    double torque_cmd = motor_current * 2000.0;  // 缩放系数，可根据现场需要调整
     
     // 当位置误差足够小(接近目标)时，将目标转矩强制置0，避免到点仍有残余力矩
     if (fabs(pos_error_rad) < 0.001) { // 约等于 <0.057 度
         torque_cmd = 0.0;
     }
-    if (torque_cmd > 200.0) torque_cmd = 160.0;
-    if (torque_cmd < -200.0) torque_cmd = -160.0;
+    if (torque_cmd > 200.0) torque_cmd = 200.0;
+    if (torque_cmd < -200.0) torque_cmd = -200.0;
     motion_data[slv_num].target_torque = (short)torque_cmd;
     
     // 首次设置转矩时打印信息（调试用），体现绝对位置 + 力矩输出的混合控制逻辑

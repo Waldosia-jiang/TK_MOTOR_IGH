@@ -2,7 +2,7 @@
 #define __IGH_EXAMPLE__
 
 #include "ecrt.h"
-#define MAX_SLAVE_NUMBER 8
+#define MAX_SLAVE_NUMBER 20
 
 /* 注意：域中的过程数据偏移量。
    为每个从站设备声明。 */

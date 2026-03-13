@@ -3,7 +3,7 @@
 
 #include "igh_example.h"
 
-#define MAX_SLAVE_NUMBER 8
+#define MAX_SLAVE_NUMBER 20
 
 /**
  * 增量控制模式上下文结构体

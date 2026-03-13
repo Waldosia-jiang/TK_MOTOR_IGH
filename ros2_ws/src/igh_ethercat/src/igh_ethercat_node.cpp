@@ -54,7 +54,9 @@ private:
 
     const int begin = static_cast<int>(msg->begin);
     const int end = static_cast<int>(msg->end);
-    if (begin < 0 || begin >= kMaxMotors || end < 0 || end >= kMaxMotors || begin > end) {
+    // 使用实际从站数量限制索引范围，避免越界访问和上层"Exceeded upper bound"错误
+    const int max_index = static_cast<int>(std::min<unsigned int>(slave_count, kMaxMotors));
+    if (begin < 0 || begin >= max_index || end < 0 || end >= max_index || begin > end) {
       RCLCPP_WARN_THROTTLE(
         get_logger(), *get_clock(), 2000,
         "invalid begin/end: %d..%d", begin, end);
@@ -87,9 +89,11 @@ private:
     arm_control::msg::LowState st;
     st.header.stamp = this->now();
     st.slave_num = static_cast<uint8_t>(slave_count);
-    st.motor_state.resize(static_cast<size_t>(kMaxMotors));
+    // 仅根据实际从站数量发布状态，防止超过消息定义的上限
+    const int motor_count = static_cast<int>(std::min<unsigned int>(slave_count, kMaxMotors));
+    st.motor_state.resize(static_cast<size_t>(motor_count));
 
-    for (int i = 0; i < kMaxMotors; ++i) {
+    for (int i = 0; i < motor_count; ++i) {
       auto & ms = st.motor_state[static_cast<size_t>(i)];
       ms.mode = motion_data[i].control_mode_acutal;
       ms.q = static_cast<float>(
