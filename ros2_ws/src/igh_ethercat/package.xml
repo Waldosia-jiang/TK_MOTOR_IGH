@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>igh_ethercat</name>
+  <version>0.0.1</version>
+  <description>
+    EtherCAT motor control node wrapping the legacy IGH example code,
+    using the arm_control message interfaces for commands and states.
+  </description>
+
+  <maintainer email="todo@todo.todo">TODO</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+
+  <!-- Runtime dependencies -->
+  <depend>rclcpp</depend>
+  <depend>arm_control</depend>
+
+  <!-- For time stamps in messages we use builtin_interfaces via arm_control -->
+  <exec_depend>builtin_interfaces</exec_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
+

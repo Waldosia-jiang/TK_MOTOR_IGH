@@ -67,13 +67,6 @@ struct motion_state g_motion_state = {
 // S曲线轨迹规划全局实例
 struct s_curve_trajectory g_s_curve_traj[MAX_SLAVE_NUMBER] = {0};
 
-// CST模式位置控制上下文：用于固定期望位置，而不是每周期跟随actual_position
-// g_cst_zero_table 用于为每个轴配置一个固定零点（编码器计数）。
-// 如需在后续每次启动时都以同一个零点为参考，可以把当前调试得到的实际位置写到下面数组中。
-// 例如：{9948, -3473, 2171, 28958, 0, 0, 0, 0}。
-static const int32_t g_cst_zero_table[MAX_SLAVE_NUMBER] = {
-    0, 0, 0, 0, 0, 0, 0, 0
-};
 static int32_t g_cst_initial_position[MAX_SLAVE_NUMBER] = {0};
 static int     g_cst_initialized[MAX_SLAVE_NUMBER]      = {0};
 static int     g_cst_first_printed[MAX_SLAVE_NUMBER]    = {0};
@@ -755,37 +748,27 @@ void motion_process_slave_motion_cst(int slv_num)
         return;
     }
     
-    // 如果未通过-t参数设置位置增量，目标转矩为0（停止）
-    if (target_torque == 0) {
+    // 这里约定：motion_data[slv_num].target_position 由 q 字段映射而来，
+    // 直接表示“绝对期望位置”（单位：编码器计数），不再作为相对增量使用。
+    int32_t pos_desired_cnt = motion_data[slv_num].target_position;
+    // 如果期望位置等于当前实际位置，则目标转矩为0（保持当前位置，无力矩输出）
+    if (pos_desired_cnt == motion_data[slv_num].actual_position) {
         motion_data[slv_num].target_torque = 0;
         return;
     }
     
-    // 使用 -t 作为相对于“参考零点”的位置增量（cnt）
-    // 参考零点优先从 g_cst_zero_table[slv_num] 读取（如果非0），否则在首次进入CST模式时，
-    // 记录该时刻的实际位置作为参考零点 g_cst_initial_position[slv_num]。
-    // 之后 -t 始终表示：相对于这个参考零点的增量（正负皆可）。
+    // 首次进入CST模式时，记录初始位置，主要用于调试打印
     if (!g_cst_initialized[slv_num]) {
-        if (g_cst_zero_table[slv_num] != 0) {
-            g_cst_initial_position[slv_num] = g_cst_zero_table[slv_num];
-        } else {
-            g_cst_initial_position[slv_num] = motion_data[slv_num].actual_position;
-        }
+        g_cst_initial_position[slv_num] = motion_data[slv_num].actual_position;
         g_cst_initialized[slv_num] = 1;
     }
     
-    // 当前位置（编码器cnt），以及以参考零点为原点的相对位置
+    // 当前位置（编码器cnt）
     int32_t pos_current_cnt = motion_data[slv_num].actual_position;
-    int32_t pos_current_rel_cnt = pos_current_cnt - g_cst_initial_position[slv_num];
-    // 期望相对位置 = -t 参数（cnt），以参考零点为原点
-    int32_t pos_desired_rel_cnt = target_torque;
-    // 为了保持与原有实现等价，仍然构造一个“绝对期望位置”用于调试打印
-    int32_t pos_desired_cnt = g_cst_initial_position[slv_num] + pos_desired_rel_cnt;
     
     // 当前位置、期望位置转换为角度（度）：cnt / 131072 * 360
-    // 这里全部使用“相对参考零点”的位置做控制，确保 -t 始终是相对增量
-    double pos_current_deg = (double)pos_current_rel_cnt / 131072.0 * 360.0;
-    double pos_desired_deg = (double)pos_desired_rel_cnt / 131072.0 * 360.0;
+    double pos_current_deg = (double)pos_current_cnt / 131072.0 * 360.0;
+    double pos_desired_deg = (double)pos_desired_cnt / 131072.0 * 360.0;
     
     // 角度转弧度
     double pos_current_rad = pos_current_deg * (M_PI / 180.0);
@@ -816,16 +799,15 @@ void motion_process_slave_motion_cst(int slv_num)
     if (fabs(pos_error_rad) < 0.001) { // 约等于 <0.057 度
         torque_cmd = 0.0;
     }
-    if (torque_cmd > 200.0) torque_cmd = 200.0;
-    if (torque_cmd < -200.0) torque_cmd = -200.0;
+    if (torque_cmd > 200.0) torque_cmd = 160.0;
+    if (torque_cmd < -200.0) torque_cmd = -160.0;
     motion_data[slv_num].target_torque = (short)torque_cmd;
     
-    // 首次设置转矩时打印信息（调试用），体现位置增量 + 力矩输出的混合控制逻辑
+    // 首次设置转矩时打印信息（调试用），体现绝对位置 + 力矩输出的混合控制逻辑
     if (!g_cst_first_printed[slv_num]) {
-        printf("轴 %d: CST模式 - 初始位置=%d, 期望增量=%d, 期望位置=%d, motor_current=%.3f, 计算目标转矩 = %d\n", 
+        printf("轴 %d: CST模式 - 初始位置=%d, 期望绝对位置=%d, motor_current=%.3f, 计算目标转矩 = %d\n", 
                slv_num,
                g_cst_initial_position[slv_num],
-               target_torque,
                pos_desired_cnt,
                motor_current,
                motion_data[slv_num].target_torque);
